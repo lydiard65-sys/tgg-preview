@@ -244,7 +244,7 @@ details p{margin:8px 0 0}
 .pdp-shot{margin:0;background:transparent;overflow:visible}
 .pdp-shot img{width:100%;height:auto;max-height:78vh;object-fit:contain;object-position:center center;display:block;margin:auto}
 .pdp-info{padding:2px 0 0;overflow:visible;min-width:0}
-.pdp-title{margin:0 0 8px;overflow:visible}
+.pdp-title{margin:0 0 8px;overflow:visible;line-height:0;font-size:0;letter-spacing:0;font-style:normal;height:auto;max-height:none}
 .pdp-title img{width:100%;max-width:100%;height:auto;display:block;overflow:visible}
 .pdp-sub{margin:0 0 14px;color:#f4f6f8;font:600 13px/1.4 "Oswald","Helvetica Neue",Arial,sans-serif;letter-spacing:1.6px;text-transform:uppercase}
 .pdp-storefront .price-big{font-size:32px;font-weight:900;color:#fff;margin:0 0 18px;letter-spacing:.3px;font-style:normal;text-transform:none;line-height:1.15}
@@ -394,6 +394,8 @@ details p{margin:8px 0 0}
 .feat-info{min-width:0}
 .feat-title{margin:0 0 10px;min-height:84px;display:flex;align-items:center}
 .feat-title img{width:100%;max-width:480px;height:auto}
+.feat-title:not(.mates-title){overflow:visible;line-height:0;height:auto;max-height:none}
+.feat-title:not(.mates-title) img{display:block;flex:none}
 .feat-title.mates-title{font-size:clamp(28px,3.2vw,42px);line-height:1.1;text-transform:none;font-style:italic;font-weight:900;letter-spacing:.2px;color:#f4f6f8}
 .feat-title .mates-title-line img{height:1.05em;width:auto;max-width:none;filter:drop-shadow(0 2px 0 #000)}
 .feat-price{margin:0 0 16px;color:#fff}
