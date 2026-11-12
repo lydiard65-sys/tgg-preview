@@ -2,7 +2,7 @@
   "name": "Truckin' Good Gear",
   "short_name": "TGG",
   "description": "Australian truck-themed apparel. Built for the long haul. Storefront preview, orders not open yet.",
-  "start_url": "./float-em.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0c",

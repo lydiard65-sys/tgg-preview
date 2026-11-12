@@ -1,5 +1,5 @@
 /* Truckin' Good Gear — service worker (preview site) */
-var CACHE_NAME = 'tgg-static-v2';
+var CACHE_NAME = 'tgg-static-v3';
 var PRECACHE = [
   './',
   './index.html',
