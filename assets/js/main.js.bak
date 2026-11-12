@@ -1,0 +1,118 @@
+/* Truckin' Good Gear — small site script (no build step) */
+(function () {
+  var C = window.TGG_CONFIG || { ordersOpen: false, prices: {}, paymentLinks: {} };
+  function money(n) { return '$' + (Number(n) % 1 ? Number(n).toFixed(2) : String(n)); }
+
+  // Mobile nav
+  var t = document.querySelector('.nav-toggle'), nav = document.getElementById('site-nav');
+  if (t && nav) t.addEventListener('click', function () {
+    var open = nav.classList.toggle('open'); t.setAttribute('aria-expanded', open);
+  });
+
+  // Prices from config (static fallback text is already in the HTML)
+  document.querySelectorAll('[data-price]').forEach(function (el) {
+    var k = el.getAttribute('data-price'), v = C.prices && C.prices[k];
+    if (v == null) return;
+    el.textContent = k === 'customPhoto' ? '+' + money(v) : 'From ' + money(v);
+  });
+
+  // Shop filters
+  var fbtns = document.querySelectorAll('[data-filter]');
+  function applyFilter(f) {
+    var ok = false;
+    fbtns.forEach(function (b) { if (b.dataset.filter === f) ok = true; });
+    if (!ok) f = 'all';
+    fbtns.forEach(function (b) { var on = b.dataset.filter === f; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); });
+    var n = 0;
+    document.querySelectorAll('[data-category]').forEach(function (c) {
+      var show = f === 'all' || c.dataset.category.split(' ').indexOf(f) > -1; c.hidden = !show; if (show) n++;
+    });
+    var cnt = document.getElementById('result-count'); if (cnt) cnt.textContent = n + (n === 1 ? ' design' : ' designs');
+  }
+  if (fbtns.length) {
+    fbtns.forEach(function (b) { b.addEventListener('click', function () {
+      applyFilter(b.dataset.filter);
+      history.replaceState(null, '', b.dataset.filter === 'all' ? location.pathname : '?range=' + b.dataset.filter);
+    }); });
+    applyFilter(new URLSearchParams(location.search).get('range') || 'all');
+  }
+
+  // Cartoon Truck art: TGG_CONFIG.cartoonArt is the one place for these image paths.
+  // The HTML ships with the art that existed at build time; this applies any path set later.
+  var ART = C.cartoonArt || {};
+  document.querySelectorAll('[data-art-key]').forEach(function (box) {
+    var path = ART[box.dataset.artKey]; if (!path) return;
+    var isPdp = box.classList.contains('art-slot');
+    var img = box.querySelector('img');
+    if (img) { if (isPdp) img.src = path; return; }
+    var tile = box.querySelector('.dock-mark'); if (!tile) return;
+    img = document.createElement('img');
+    img.src = path; img.loading = 'lazy';
+    img.alt = box.dataset.artAlt || ''; img.decoding = 'async';
+    if (isPdp) { img.id = 'pdp-img'; tile.replaceWith(img); var sw = document.querySelector('.swatches button'); if (sw) sw.dataset.img = path; }
+    else { var a = document.createElement('a'); a.className = 'media'; a.href = tile.getAttribute('href'); a.tabIndex = -1; a.setAttribute('aria-hidden', 'true'); a.appendChild(img); tile.replaceWith(a); }
+  });
+
+  // Product page
+  var pdp = document.querySelector('.pdp[data-product]');
+  if (pdp) {
+    var product = pdp.dataset.product, variant = pdp.dataset.defaultVariant || '', size = '';
+    var img = document.getElementById('pdp-img'), buy = document.getElementById('buy'), note = document.getElementById('buy-note');
+    var sw = pdp.querySelectorAll('.swatches button'), sz = pdp.querySelectorAll('.sizes button');
+    function key() { return variant ? product + '/' + variant : product; }
+    function update() {
+      var links = (C.paymentLinks || {})[key()] || {}, url = size && links[size];
+      if (C.ordersOpen && url) {
+        buy.textContent = 'Buy now'; buy.href = url; buy.classList.remove('disabled'); buy.removeAttribute('aria-disabled');
+        note.textContent = 'You’ll be taken to secure checkout.';
+      } else {
+        buy.textContent = 'Coming soon'; buy.removeAttribute('href'); buy.classList.add('disabled'); buy.setAttribute('aria-disabled', 'true');
+        note.textContent = (size ? 'Size ' + size + ' noted. ' : '') + 'Orders aren’t open yet. This is a preview and nothing will be charged.';
+      }
+    }
+    function pickVariant(b) {
+      sw.forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      variant = b.dataset.variant;
+      if (img) { img.src = b.dataset.img; img.alt = b.dataset.alt; }
+      var o = document.getElementById('colour-out'); if (o) o.textContent = b.dataset.label;
+      var media = document.querySelector('.pdp-media'); if (media && b.dataset.bg) media.className = 'pdp-media ' + b.dataset.bg;
+      history.replaceState(null, '', '#' + variant); update();
+    }
+    sw.forEach(function (b) { b.addEventListener('click', function () { pickVariant(b); }); });
+    var h = location.hash.slice(1), start = null;
+    sw.forEach(function (b) { if (b.dataset.variant === h) start = b; });
+    if (start) pickVariant(start);
+    sz.forEach(function (b) { b.addEventListener('click', function () {
+      sz.forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); size = b.dataset.size;
+      var o = document.getElementById('size-out'); if (o) o.textContent = size; update();
+    }); });
+    if (buy) buy.addEventListener('click', function (e) { if (buy.classList.contains('disabled')) e.preventDefault(); });
+    update();
+  }
+
+  // Your Truck custom preview
+  var form = document.getElementById('custom-form');
+  if (form) {
+    var sel = form.querySelector('[name=slogan]'), gar = form.querySelector('[name=garment]'), file = form.querySelector('[name=truck-photo]');
+    var pvS = document.getElementById('pv-slogan'), pvP = document.getElementById('pv-photo'), pvM = document.getElementById('pv-meta'), err = document.getElementById('photo-error');
+    var url;
+    function meta() {
+      var g = gar.options[gar.selectedIndex];
+      pvS.textContent = sel.value;
+      pvM.textContent = g.text + ' · photo option ' + ('+' + money(C.prices.customPhoto || 7.5)) + ' (to be confirmed)';
+    }
+    sel.addEventListener('change', meta); gar.addEventListener('change', meta); meta();
+    file.addEventListener('change', function () {
+      var f = file.files[0]; err.textContent = '';
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { err.textContent = 'Please choose an image file (JPG, PNG or HEIC).'; file.value = ''; return; }
+      if (f.size > 8 * 1024 * 1024) { err.textContent = 'That photo is over 8 MB. Please choose a smaller one.'; file.value = ''; return; }
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(f);
+      pvP.innerHTML = ''; var i = new Image(); i.src = url; i.alt = 'Preview of your uploaded vehicle photo'; pvP.appendChild(i);
+    });
+  }
+
+  // Year in footer
+  var y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
+})();
